@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Dashboard Administrativa | ACIA</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="page">
+    <header>
+      <img class="logo" src="LOGO-ACIA_65_PRINCIPAL.png" alt="ACIA Casa do Empresário 65 anos">
+      <div class="header-text">
+        <h1>Dashboard Administrativa</h1>
+        <p>Visualização das solicitações de pré-locação e feedbacks salvos no Firestore.</p>
+        <div class="nav-links">
+          <a href="formulario-locacao-acia.html">Formulário de pré-locação</a>
+          <a href="feedback-pos-locacao.html">Feedback pós-locação</a>
+        </div>
+      </div>
+    </header>
+
+    <section id="login-panel" class="content login-panel">
+      <form id="login-form" class="login-box">
+        <div id="login-status" class="status" role="status"></div>
+        <h2 class="section-title">Acesso administrativo</h2>
+        <div class="grid">
+          <div class="field">
+            <label for="login-email">E-mail</label>
+            <input id="login-email" name="email" type="email" autocomplete="email" required>
+          </div>
+          <div class="field">
+            <label for="login-password">Senha</label>
+            <input id="login-password" name="password" type="password" autocomplete="current-password" required>
+          </div>
+        </div>
+        <div class="actions">
+          <button class="primary" type="submit">Entrar</button>
+        </div>
+      </form>
+    </section>
+
+    <section id="admin-panel" class="content" hidden>
+      <div id="admin-status" class="status" role="status"></div>
+
+      <div class="admin-topbar">
+        <span id="admin-user"></span>
+        <button id="logout-button" class="secondary" type="button">Sair</button>
+      </div>
+
+      <div class="stats">
+        <div class="stat">
+          <strong id="total-locacoes">0</strong>
+          <span>Pré-locações</span>
+        </div>
+        <div class="stat">
+          <strong id="total-feedbacks">0</strong>
+          <span>Feedbacks</span>
+        </div>
+        <div class="stat">
+          <strong id="total-cafe">0</strong>
+          <span>Com café</span>
+        </div>
+        <div class="stat">
+          <strong id="total-flip">0</strong>
+          <span>Com Flip Chart</span>
+        </div>
+      </div>
+
+      <div class="toolbar">
+        <input id="search" type="search" placeholder="Buscar por empresa, responsável, espaço ou pagamento">
+        <select id="view-filter">
+          <option value="preLocacoes">Pré-locações</option>
+          <option value="feedbacks">Feedbacks</option>
+        </select>
+      </div>
+
+      <h2 class="section-title" id="list-title">Respostas de Pré-Locação</h2>
+      <div id="response-list" class="response-list"></div>
+    </section>
+  </main>
+
+  <script type="module">
+    import {
+      auth,
+      collection,
+      db,
+      getDocs,
+      limit,
+      onAuthStateChanged,
+      orderBy,
+      query,
+      signInWithEmailAndPassword,
+      signOut
+    } from "./firebase-config.js";
+
+    const loginPanel = document.getElementById("login-panel");
+    const adminPanel = document.getElementById("admin-panel");
+    const loginForm = document.getElementById("login-form");
+    const loginStatus = document.getElementById("login-status");
+    const adminUser = document.getElementById("admin-user");
+    const logoutButton = document.getElementById("logout-button");
+    const status = document.getElementById("admin-status");
+    const responseList = document.getElementById("response-list");
+    const searchInput = document.getElementById("search");
+    const viewFilter = document.getElementById("view-filter");
+    const listTitle = document.getElementById("list-title");
+    const totals = {
+      locacoes: document.getElementById("total-locacoes"),
+      feedbacks: document.getElementById("total-feedbacks"),
+      cafe: document.getElementById("total-cafe"),
+      flip: document.getElementById("total-flip")
+    };
+
+    let preLocacoes = [];
+    let feedbacks = [];
+    let dashboardLoaded = false;
+
+    function setStatus(element, message, type) {
+      element.textContent = message;
+      element.className = `status show ${type}`;
+    }
+
+    function clearStatus(element) {
+      element.className = "status";
+      element.textContent = "";
+    }
+
+    function formatDate(value) {
+      if (!value) return "Não informado";
+      if (value.toDate) return value.toDate().toLocaleString("pt-BR");
+      return value;
+    }
+
+    function normalize(value) {
+      return String(value || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? "").replace(/[&<>"']/g, (character) => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#039;"
+      })[character]);
+    }
+
+    function detail(label, value) {
+      const safeValue = value === true ? "Sim" : value === false ? "Não" : value || "Não informado";
+      return `<div class="detail"><b>${escapeHtml(label)}</b><span>${escapeHtml(safeValue)}</span></div>`;
+    }
+
+    function renderPreLocacoes(items) {
+      listTitle.textContent = "Respostas de Pré-Locação";
+      if (!items.length) {
+        responseList.innerHTML = `<div class="empty">Nenhuma solicitação encontrada.</div>`;
+        return;
+      }
+
+      responseList.innerHTML = items.map((item) => `
+        <article class="response-card">
+          <h2>${escapeHtml(item.razaoSocial || "Empresa não informada")}</h2>
+          <p class="meta">Enviado em ${escapeHtml(formatDate(item.enviadoEm))} · ${escapeHtml(item.responsavel || "Responsável não informado")}</p>
+          <div class="details">
+            ${detail("Nº associado", item.numeroAssociado)}
+            ${detail("Telefone", item.telefone)}
+            ${detail("E-mail", item.email)}
+            ${detail("Data", item.dataUtilizacao)}
+            ${detail("Horário", `${item.horarioInicio || ""} - ${item.horarioTermino || ""}`)}
+            ${detail("Participantes", item.participantes)}
+            ${detail("Espaço", item.espaco)}
+            ${detail("Configuração", item.configuracao)}
+            ${detail("Pagamento", item.pagamento)}
+            ${detail("Café", item.cafe)}
+            ${detail("Flip Chart", item.flipChart)}
+            ${detail("Finalidade", item.finalidade)}
+          </div>
+        </article>
+      `).join("");
+    }
+
+    function renderFeedbacks(items) {
+      listTitle.textContent = "Feedbacks Pós-Locação";
+      if (!items.length) {
+        responseList.innerHTML = `<div class="empty">Nenhum feedback encontrado.</div>`;
+        return;
+      }
+
+      responseList.innerHTML = items.map((item) => `
+        <article class="response-card">
+          <h2>${escapeHtml(item.empresa || "Empresa não informada")}</h2>
+          <p class="meta">Enviado em ${escapeHtml(formatDate(item.enviadoEm))} · ${escapeHtml(item.responsavel || "Responsável não informado")}</p>
+          <div class="details">
+            ${detail("E-mail", item.email)}
+            ${detail("Data de utilização", item.dataUtilizacao)}
+            ${detail("Voltaria a utilizar", item.voltaria)}
+            ${detail("Sugestões", item.melhorias)}
+          </div>
+        </article>
+      `).join("");
+    }
+
+    function applyFilter() {
+      const term = normalize(searchInput.value);
+      const source = viewFilter.value === "feedbacks" ? feedbacks : preLocacoes;
+      const filtered = source.filter((item) => normalize(Object.values(item).join(" ")).includes(term));
+
+      if (viewFilter.value === "feedbacks") {
+        renderFeedbacks(filtered);
+      } else {
+        renderPreLocacoes(filtered);
+      }
+    }
+
+    async function loadCollection(collectionName) {
+      const snapshot = await getDocs(query(collection(db, collectionName), orderBy("enviadoEm", "desc"), limit(200)));
+      return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+    }
+
+    async function loadDashboard() {
+      setStatus(status, "Carregando respostas...", "success");
+
+      try {
+        [preLocacoes, feedbacks] = await Promise.all([
+          loadCollection("preLocacoes"),
+          loadCollection("feedbacks")
+        ]);
+
+        totals.locacoes.textContent = preLocacoes.length;
+        totals.feedbacks.textContent = feedbacks.length;
+        totals.cafe.textContent = preLocacoes.filter((item) => item.cafe).length;
+        totals.flip.textContent = preLocacoes.filter((item) => item.flipChart).length;
+
+        clearStatus(status);
+        dashboardLoaded = true;
+        applyFilter();
+      } catch (error) {
+        console.error(error);
+        setStatus(status, "Não foi possível carregar o Firestore. Confira as regras de leitura do banco.", "error");
+        responseList.innerHTML = `<div class="empty">As respostas não puderam ser carregadas.</div>`;
+      }
+    }
+
+    loginForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const formData = new FormData(loginForm);
+      const submitButton = loginForm.querySelector("button[type='submit']");
+
+      submitButton.disabled = true;
+      setStatus(loginStatus, "Entrando...", "success");
+
+      try {
+        await signInWithEmailAndPassword(auth, formData.get("email"), formData.get("password"));
+        loginForm.reset();
+        clearStatus(loginStatus);
+      } catch (error) {
+        console.error(error);
+        setStatus(loginStatus, "Login inválido ou não habilitado no Firebase Authentication.", "error");
+      } finally {
+        submitButton.disabled = false;
+      }
+    });
+
+    logoutButton.addEventListener("click", async () => {
+      await signOut(auth);
+    });
+
+    onAuthStateChanged(auth, (user) => {
+      const isLoggedIn = Boolean(user);
+      loginPanel.hidden = isLoggedIn;
+      adminPanel.hidden = !isLoggedIn;
+      adminUser.textContent = user ? `Logado como ${user.email}` : "";
+
+      if (isLoggedIn && !dashboardLoaded) {
+        loadDashboard();
+      }
+    });
+
+    searchInput.addEventListener("input", applyFilter);
+    viewFilter.addEventListener("change", applyFilter);
+  </script>
+</body>
+</html>

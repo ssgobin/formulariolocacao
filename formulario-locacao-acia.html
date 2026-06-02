@@ -1,0 +1,295 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Formulário de Pré-Locação | ACIA</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="page">
+    <header>
+      <img class="logo" src="LOGO-ACIA_65_PRINCIPAL.png" alt="ACIA Casa do Empresário 65 anos">
+      <div class="header-text">
+        <h1>Formulário de Pré-Locação</h1>
+        <p>Solicitação de reserva dos espaços da ACIA Casa do Empresário.</p>
+      </div>
+    </header>
+
+    <form id="pre-locacao-form">
+      <div id="form-status" class="status" role="status"></div>
+
+      <fieldset>
+        <legend>Dados do Associado</legend>
+        <div class="grid">
+          <div class="field">
+            <label for="numero-associado">Número do associado</label>
+            <input id="numero-associado" name="numeroAssociado" type="text">
+          </div>
+          <div class="field">
+            <label for="razao-social">Razão Social / Empresa <span class="required">*</span></label>
+            <input id="razao-social" name="razaoSocial" type="text" required>
+          </div>
+          <div class="field">
+            <label for="responsavel">Nome do responsável <span class="required">*</span></label>
+            <input id="responsavel" name="responsavel" type="text" required>
+          </div>
+          <div class="field">
+            <label for="telefone">Telefone <span class="required">*</span></label>
+            <input id="telefone" name="telefone" type="tel" required>
+          </div>
+          <div class="field full">
+            <label for="email">E-mail <span class="required">*</span></label>
+            <input id="email" name="email" type="email" required>
+          </div>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Dados da Reserva</legend>
+        <div class="grid">
+          <div class="field">
+            <label for="data-utilizacao">Data da utilização <span class="required">*</span></label>
+            <input id="data-utilizacao" name="dataUtilizacao" type="date" required>
+          </div>
+          <div class="field">
+            <label for="participantes">Quantidade de participantes <span class="required">*</span></label>
+            <input id="participantes" name="participantes" type="number" min="1" required>
+          </div>
+          <div class="field">
+            <label for="horario-inicio">Horário de início <span class="required">*</span></label>
+            <input id="horario-inicio" name="horarioInicio" type="time" required>
+          </div>
+          <div class="field">
+            <label for="horario-termino">Horário de término <span class="required">*</span></label>
+            <input id="horario-termino" name="horarioTermino" type="time" required>
+          </div>
+          <div class="field full">
+            <span class="group-label">Café</span>
+            <label class="option">
+              <input type="checkbox" name="cafe" value="sim">
+              Incluir café no valor de R$ 30,00
+            </label>
+          </div>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Espaço Desejado <span class="required">*</span></legend>
+        <div class="rooms">
+          <section class="room">
+            <label>
+              <input type="radio" name="espaco" value="Sala de Treinamento 01" required>
+              Sala de Treinamento 01
+            </label>
+            <ul>
+              <li>Capacidade máxima: 30 participantes</li>
+              <li>Projetor multimídia</li>
+              <li>Tela de projeção retrátil</li>
+              <li>Mesa de som</li>
+              <li>Microfone sem fio</li>
+              <li>Ar-condicionado funcionando</li>
+              <li>Controle do ar-condicionado</li>
+              <li>Internet/Wi-Fi funcionando</li>
+            </ul>
+          </section>
+
+          <section class="room">
+            <label>
+              <input type="radio" name="espaco" value="Sala de Treinamento 02">
+              Sala de Treinamento 02
+            </label>
+            <ul>
+              <li>Capacidade máxima: 50 participantes</li>
+              <li>TV 75&quot;</li>
+              <li>Mesa de som</li>
+              <li>Microfone sem fio</li>
+              <li>2 aparelhos de ar-condicionado funcionando</li>
+              <li>Controles dos equipamentos</li>
+              <li>Internet/Wi-Fi funcionando</li>
+            </ul>
+          </section>
+
+          <section class="room">
+            <label>
+              <input type="radio" name="espaco" value="Auditório">
+              Auditório
+            </label>
+            <ul>
+              <li>99 cadeiras</li>
+              <li>3 TVs de 70&quot;</li>
+              <li>Mesa de som</li>
+              <li>2 microfones sem fio</li>
+              <li>5 aparelhos de ar-condicionado funcionando</li>
+              <li>Controles dos equipamentos</li>
+              <li>Internet/Wi-Fi funcionando</li>
+            </ul>
+          </section>
+
+          <section class="room">
+            <label>
+              <input type="radio" name="espaco" value="Salão Gourmet">
+              Salão Gourmet
+            </label>
+            <ul>
+              <li>Cozinha disponível</li>
+              <li>Banheiros feminino e masculino</li>
+              <li>3 aparelhos de ar-condicionado funcionando</li>
+              <li>Internet/Wi-Fi funcionando</li>
+            </ul>
+          </section>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Finalidade e Configuração</legend>
+        <div class="grid">
+          <div class="field full">
+            <label for="finalidade">Finalidade da locação</label>
+            <textarea id="finalidade" name="finalidade"></textarea>
+          </div>
+          <div class="field full">
+            <span class="group-label">Posicionamento das cadeiras</span>
+            <div class="options">
+              <label class="option"><input type="radio" name="configuracao" value="Auditório"> Auditório</label>
+              <label class="option"><input type="radio" name="configuracao" value="Escolar"> Escolar</label>
+              <label class="option"><input type="radio" name="configuracao" value="Formato U"> Formato U</label>
+              <label class="option"><input type="radio" name="configuracao" value="Sem configuração específica"> Sem configuração específica</label>
+            </div>
+          </div>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Recursos Necessários</legend>
+        <label class="option">
+          <input type="checkbox" name="flipChart" value="sim">
+          Utilização de Flip Chart
+        </label>
+      </fieldset>
+
+      <fieldset>
+        <legend>Forma de Pagamento <span class="required">*</span></legend>
+        <div class="options">
+          <label class="option"><input type="radio" name="pagamento" value="Mensalidade" required> Mensalidade (Associado: segunda a sexta, das 08h às 17h)</label>
+          <label class="option"><input type="radio" name="pagamento" value="Pix"> Pix</label>
+          <label class="option"><input type="radio" name="pagamento" value="Cartão"> Cartão</label>
+          <label class="option"><input type="radio" name="pagamento" value="Boleto"> Boleto</label>
+          <label class="option"><input type="radio" name="pagamento" value="Bônus"> Bônus (Parcerias e cortesias)</label>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Termo de Responsabilidade</legend>
+        <label class="notice">
+          <input type="checkbox" name="termo" value="aceito" required>
+          <span>Declaro estar ciente das normas de utilização dos espaços da ACIA e me responsabilizo por eventuais danos causados durante a utilização.</span>
+        </label>
+      </fieldset>
+
+      <div class="actions">
+        <button class="secondary" type="reset">Limpar formulário</button>
+        <button class="secondary" type="button" onclick="window.print()">Imprimir / salvar PDF</button>
+        <button class="primary" type="submit">Enviar solicitação</button>
+      </div>
+    </form>
+  </main>
+
+  <div id="success-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="success-modal-title" hidden>
+    <div class="modal-backdrop" data-close-modal></div>
+    <section class="modal-card" tabindex="-1">
+      <div class="modal-mark" aria-hidden="true">✓</div>
+      <h2 id="success-modal-title">Solicitação enviada</h2>
+      <p>Recebemos o formulário de pré-locação. A equipe da ACIA irá analisar as informações e dar continuidade ao atendimento.</p>
+      <div class="actions">
+        <button id="success-modal-close" class="primary" type="button">Entendi</button>
+      </div>
+    </section>
+  </div>
+
+  <script type="module">
+    import { addDoc, collection, db, serverTimestamp } from "./firebase-config.js";
+
+    const form = document.getElementById("pre-locacao-form");
+    const status = document.getElementById("form-status");
+    const submitButton = form.querySelector("button[type='submit']");
+    const successModal = document.getElementById("success-modal");
+    const modalCard = successModal.querySelector(".modal-card");
+    const modalCloseButton = document.getElementById("success-modal-close");
+
+    function setStatus(message, type) {
+      status.textContent = message;
+      status.className = `status show ${type}`;
+    }
+
+    function openSuccessModal() {
+      successModal.hidden = false;
+      document.body.classList.add("modal-open");
+      modalCard.focus();
+    }
+
+    function closeSuccessModal() {
+      successModal.hidden = true;
+      document.body.classList.remove("modal-open");
+    }
+
+    function checkedValue(formData, key) {
+      return formData.get(key) || "";
+    }
+
+    modalCloseButton.addEventListener("click", closeSuccessModal);
+    successModal.addEventListener("click", (event) => {
+      if (event.target.matches("[data-close-modal]")) {
+        closeSuccessModal();
+      }
+    });
+
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && !successModal.hidden) {
+        closeSuccessModal();
+      }
+    });
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const formData = new FormData(form);
+
+      const payload = {
+        tipo: "pre-locacao",
+        numeroAssociado: formData.get("numeroAssociado") || "",
+        razaoSocial: formData.get("razaoSocial") || "",
+        responsavel: formData.get("responsavel") || "",
+        telefone: formData.get("telefone") || "",
+        email: formData.get("email") || "",
+        dataUtilizacao: formData.get("dataUtilizacao") || "",
+        participantes: Number(formData.get("participantes") || 0),
+        horarioInicio: formData.get("horarioInicio") || "",
+        horarioTermino: formData.get("horarioTermino") || "",
+        cafe: formData.has("cafe"),
+        espaco: checkedValue(formData, "espaco"),
+        finalidade: formData.get("finalidade") || "",
+        configuracao: checkedValue(formData, "configuracao"),
+        flipChart: formData.has("flipChart"),
+        pagamento: checkedValue(formData, "pagamento"),
+        termo: formData.has("termo"),
+        enviadoEm: serverTimestamp()
+      };
+
+      submitButton.disabled = true;
+      setStatus("Enviando solicitação...", "success");
+
+      try {
+        await addDoc(collection(db, "preLocacoes"), payload);
+        form.reset();
+        setStatus("Solicitação enviada com sucesso.", "success");
+        openSuccessModal();
+      } catch (error) {
+        console.error(error);
+        setStatus("Não foi possível salvar no Firestore. Confira as regras do banco e tente novamente.", "error");
+      } finally {
+        submitButton.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>

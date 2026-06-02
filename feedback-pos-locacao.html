@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Feedback Pós-Locação | ACIA</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="page">
+    <header>
+      <img class="logo" src="LOGO-ACIA_65_PRINCIPAL.png" alt="ACIA Casa do Empresário 65 anos">
+      <div class="header-text">
+        <h1>Feedback Pós-Locação</h1>
+        <p>Avaliação de uso dos espaços da ACIA Casa do Empresário.</p>
+        <div class="nav-links">
+          <a href="formulario-locacao-acia.html">Formulário de pré-locação</a>
+          <a href="admin-locacao.html">Dashboard administrativa</a>
+        </div>
+      </div>
+    </header>
+
+    <form id="feedback-form">
+      <div id="feedback-status" class="status" role="status"></div>
+
+      <fieldset>
+        <legend>Identificação</legend>
+        <div class="grid">
+          <div class="field">
+            <label for="empresa">Razão Social / Empresa</label>
+            <input id="empresa" name="empresa" type="text">
+          </div>
+          <div class="field">
+            <label for="responsavel">Nome do responsável</label>
+            <input id="responsavel" name="responsavel" type="text">
+          </div>
+          <div class="field">
+            <label for="email">E-mail</label>
+            <input id="email" name="email" type="email">
+          </div>
+          <div class="field">
+            <label for="data-utilizacao">Data da utilização</label>
+            <input id="data-utilizacao" name="dataUtilizacao" type="date">
+          </div>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Pesquisa Pós-Locação</legend>
+        <div class="grid">
+          <div class="field full">
+            <span class="group-label">Você voltaria a utilizar os espaços da ACIA? <span class="required">*</span></span>
+            <div class="options">
+              <label class="option"><input type="radio" name="voltaria" value="Sim" required> Sim</label>
+              <label class="option"><input type="radio" name="voltaria" value="Talvez"> Talvez</label>
+              <label class="option"><input type="radio" name="voltaria" value="Não"> Não</label>
+            </div>
+          </div>
+          <div class="field full">
+            <label for="melhorias">Há alguma melhoria que gostaria de sugerir?</label>
+            <textarea id="melhorias" name="melhorias"></textarea>
+          </div>
+        </div>
+      </fieldset>
+
+      <div class="actions">
+        <button class="secondary" type="reset">Limpar formulário</button>
+        <button class="primary" type="submit">Enviar feedback</button>
+      </div>
+    </form>
+  </main>
+
+  <div id="success-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="success-modal-title" hidden>
+    <div class="modal-backdrop" data-close-modal></div>
+    <section class="modal-card" tabindex="-1">
+      <div class="modal-mark" aria-hidden="true">✓</div>
+      <h2 id="success-modal-title">Feedback enviado</h2>
+      <p>Obrigado por compartilhar sua experiência. Sua resposta ajuda a ACIA a melhorar a utilização dos espaços.</p>
+      <div class="actions">
+        <button id="success-modal-close" class="primary" type="button">Entendi</button>
+      </div>
+    </section>
+  </div>
+
+  <script type="module">
+    import { addDoc, collection, db, serverTimestamp } from "./firebase-config.js";
+
+    const form = document.getElementById("feedback-form");
+    const status = document.getElementById("feedback-status");
+    const submitButton = form.querySelector("button[type='submit']");
+    const successModal = document.getElementById("success-modal");
+    const modalCard = successModal.querySelector(".modal-card");
+    const modalCloseButton = document.getElementById("success-modal-close");
+
+    function setStatus(message, type) {
+      status.textContent = message;
+      status.className = `status show ${type}`;
+    }
+
+    function openSuccessModal() {
+      successModal.hidden = false;
+      document.body.classList.add("modal-open");
+      modalCard.focus();
+    }
+
+    function closeSuccessModal() {
+      successModal.hidden = true;
+      document.body.classList.remove("modal-open");
+    }
+
+    modalCloseButton.addEventListener("click", closeSuccessModal);
+    successModal.addEventListener("click", (event) => {
+      if (event.target.matches("[data-close-modal]")) {
+        closeSuccessModal();
+      }
+    });
+
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && !successModal.hidden) {
+        closeSuccessModal();
+      }
+    });
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const formData = new FormData(form);
+      const payload = {
+        tipo: "feedback-pos-locacao",
+        empresa: formData.get("empresa") || "",
+        responsavel: formData.get("responsavel") || "",
+        email: formData.get("email") || "",
+        dataUtilizacao: formData.get("dataUtilizacao") || "",
+        voltaria: formData.get("voltaria") || "",
+        melhorias: formData.get("melhorias") || "",
+        enviadoEm: serverTimestamp()
+      };
+
+      submitButton.disabled = true;
+      setStatus("Enviando feedback...", "success");
+
+      try {
+        await addDoc(collection(db, "feedbacks"), payload);
+        form.reset();
+        setStatus("Feedback enviado com sucesso.", "success");
+        openSuccessModal();
+      } catch (error) {
+        console.error(error);
+        setStatus("Não foi possível salvar no Firestore. Confira as regras do banco e tente novamente.", "error");
+      } finally {
+        submitButton.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>
