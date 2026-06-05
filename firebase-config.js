@@ -8,12 +8,15 @@ import {
 import {
   addDoc,
   collection,
+  doc,
   getDocs,
   getFirestore,
   limit,
   orderBy,
   query,
-  serverTimestamp
+  serverTimestamp,
+  setDoc,
+  writeBatch
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -35,12 +38,15 @@ export {
   auth,
   collection,
   db,
+  doc,
   getDocs,
   limit,
   onAuthStateChanged,
   orderBy,
   query,
   serverTimestamp,
+  setDoc,
+  writeBatch,
   signInWithEmailAndPassword,
   signOut
 };

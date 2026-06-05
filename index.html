@@ -56,13 +56,11 @@
             <label for="participantes">Quantidade de participantes <span class="required">*</span></label>
             <input id="participantes" name="participantes" type="number" min="1" required>
           </div>
-          <div class="field">
-            <label for="horario-inicio">Horário de início <span class="required">*</span></label>
-            <input id="horario-inicio" name="horarioInicio" type="time" required>
-          </div>
-          <div class="field">
-            <label for="horario-termino">Horário de término <span class="required">*</span></label>
-            <input id="horario-termino" name="horarioTermino" type="time" required>
+          <div class="field full">
+            <span class="group-label">Horário <span class="required">*</span></span>
+            <div id="horarios-grid" class="time-slots" aria-live="polite">
+              <p class="time-slots-empty">Selecione a data para ver os horários disponíveis.</p>
+            </div>
           </div>
           <div class="field full">
             <span class="group-label">Café</span>
@@ -208,11 +206,13 @@
   </div>
 
   <script type="module">
-    import { addDoc, collection, db, serverTimestamp } from "./firebase-config.js";
+    import { collection, db, doc, serverTimestamp, writeBatch } from "./firebase-config.js";
 
     const form = document.getElementById("pre-locacao-form");
     const status = document.getElementById("form-status");
     const submitButton = form.querySelector("button[type='submit']");
+    const dataInput = document.getElementById("data-utilizacao");
+    const horariosGrid = document.getElementById("horarios-grid");
     const successModal = document.getElementById("success-modal");
     const modalCard = successModal.querySelector(".modal-card");
     const modalCloseButton = document.getElementById("success-modal-close");
@@ -237,6 +237,52 @@
       return formData.get(key) || "";
     }
 
+    function formatHour(hour) {
+      return `${String(hour).padStart(2, "0")}:00`;
+    }
+
+    function getWeekDay(dateValue) {
+      return new Date(`${dateValue}T12:00:00`).getDay();
+    }
+
+    function getLimitHour(dateValue) {
+      const weekDay = getWeekDay(dateValue);
+      return weekDay === 0 || weekDay === 6 ? 18 : 22;
+    }
+
+    function renderTimeSlots() {
+      const dateValue = dataInput.value;
+
+      if (!dateValue) {
+        horariosGrid.innerHTML = `<p class="time-slots-empty">Selecione a data para ver os horários disponíveis.</p>`;
+        return;
+      }
+
+      const limitHour = getLimitHour(dateValue);
+      const slots = [];
+
+      for (let hour = 8; hour < limitHour; hour += 1) {
+        const start = formatHour(hour);
+        const end = formatHour(hour + 1);
+        slots.push(`
+          <label class="time-slot">
+            <input type="checkbox" name="horarioSelecionado" value="${start}|${end}">
+            <span>${start} - ${end}</span>
+          </label>
+        `);
+      }
+
+      horariosGrid.innerHTML = slots.join("");
+    }
+
+    function getReservationLockId(payload, horarioInicio) {
+      return encodeURIComponent([
+        payload.dataUtilizacao,
+        payload.espaco,
+        horarioInicio
+      ].join("__"));
+    }
+
     modalCloseButton.addEventListener("click", closeSuccessModal);
     successModal.addEventListener("click", (event) => {
       if (event.target.matches("[data-close-modal]")) {
@@ -250,9 +296,26 @@
       }
     });
 
+    dataInput.addEventListener("change", renderTimeSlots);
+    form.addEventListener("reset", () => {
+      window.setTimeout(renderTimeSlots, 0);
+    });
+
     form.addEventListener("submit", async (event) => {
       event.preventDefault();
       const formData = new FormData(form);
+      const horarios = formData.getAll("horarioSelecionado").map((value) => {
+        const [inicio = "", termino = ""] = String(value).split("|");
+        return { inicio, termino };
+      });
+
+      if (!horarios.length) {
+        setStatus("Selecione pelo menos um horário.", "error");
+        return;
+      }
+
+      const primeiroHorario = horarios[0];
+      const ultimoHorario = horarios[horarios.length - 1];
 
       const payload = {
         tipo: "pre-locacao",
@@ -263,8 +326,9 @@
         email: formData.get("email") || "",
         dataUtilizacao: formData.get("dataUtilizacao") || "",
         participantes: Number(formData.get("participantes") || 0),
-        horarioInicio: formData.get("horarioInicio") || "",
-        horarioTermino: formData.get("horarioTermino") || "",
+        horarioInicio: primeiroHorario.inicio,
+        horarioTermino: ultimoHorario.termino,
+        horarios,
         cafe: formData.has("cafe"),
         espaco: checkedValue(formData, "espaco"),
         finalidade: formData.get("finalidade") || "",
@@ -279,17 +343,41 @@
       setStatus("Enviando solicitação...", "success");
 
       try {
-        await addDoc(collection(db, "preLocacoes"), payload);
+        const batch = writeBatch(db);
+        const locacaoRef = doc(collection(db, "preLocacoes"));
+
+        payload.horarios.forEach((horario) => {
+          const lockRef = doc(db, "horariosLocacao", getReservationLockId(payload, horario.inicio));
+
+          batch.set(lockRef, {
+            dataUtilizacao: payload.dataUtilizacao,
+            espaco: payload.espaco,
+            horarioInicio: horario.inicio,
+            horarioTermino: horario.termino,
+            preLocacaoId: locacaoRef.id,
+            criadoEm: serverTimestamp()
+          });
+        });
+
+        batch.set(locacaoRef, payload);
+
+        await batch.commit();
         form.reset();
         setStatus("Solicitação enviada com sucesso.", "success");
         openSuccessModal();
       } catch (error) {
         console.error(error);
-        setStatus("Não foi possível salvar no Firestore. Confira as regras do banco e tente novamente.", "error");
+        if (error.code === "permission-denied") {
+          setStatus("Um dos horários selecionados já está reservado para a data e sala escolhidas. Ajuste a seleção e tente novamente.", "error");
+        } else {
+          setStatus("Não foi possível salvar no Firestore. Confira as regras do banco e tente novamente.", "error");
+        }
       } finally {
         submitButton.disabled = false;
       }
     });
+
+    renderTimeSlots();
   </script>
 </body>
 </html>

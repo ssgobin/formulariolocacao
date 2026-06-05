@@ -85,11 +85,14 @@
       auth,
       collection,
       db,
+      doc,
       getDocs,
       limit,
       onAuthStateChanged,
       orderBy,
       query,
+      serverTimestamp,
+      setDoc,
       signInWithEmailAndPassword,
       signOut
     } from "./firebase-config.js";
@@ -151,6 +154,52 @@
       return `<div class="detail"><b>${escapeHtml(label)}</b><span>${escapeHtml(safeValue)}</span></div>`;
     }
 
+    function formatHorarios(item) {
+      if (Array.isArray(item.horarios) && item.horarios.length) {
+        return item.horarios.map((horario) => `${horario.inicio || ""} - ${horario.termino || ""}`).join(", ");
+      }
+
+      return `${item.horarioInicio || ""} - ${item.horarioTermino || ""}`;
+    }
+
+    function getReservationLockId(item, horarioInicio) {
+      return encodeURIComponent([
+        item.dataUtilizacao,
+        item.espaco,
+        horarioInicio
+      ].join("__"));
+    }
+
+    async function syncReservationLocks(items) {
+      const writes = [];
+
+      items.forEach((item) => {
+        if (!item.dataUtilizacao || !item.espaco) return;
+
+        const horarios = Array.isArray(item.horarios) && item.horarios.length
+          ? item.horarios
+          : [{ inicio: item.horarioInicio, termino: item.horarioTermino || "" }];
+
+        horarios
+          .filter((horario) => horario.inicio)
+          .forEach((horario) => {
+            writes.push(setDoc(
+              doc(db, "horariosLocacao", getReservationLockId(item, horario.inicio)),
+              {
+                dataUtilizacao: item.dataUtilizacao,
+                espaco: item.espaco,
+                horarioInicio: horario.inicio,
+                horarioTermino: horario.termino || "",
+                preLocacaoId: item.id,
+                criadoEm: item.enviadoEm || serverTimestamp()
+              }
+            ));
+          });
+      });
+
+      await Promise.allSettled(writes);
+    }
+
     function renderPreLocacoes(items) {
       listTitle.textContent = "Respostas de Pré-Locação";
       if (!items.length) {
@@ -167,7 +216,7 @@
             ${detail("Telefone", item.telefone)}
             ${detail("E-mail", item.email)}
             ${detail("Data", item.dataUtilizacao)}
-            ${detail("Horário", `${item.horarioInicio || ""} - ${item.horarioTermino || ""}`)}
+            ${detail("Horário", formatHorarios(item))}
             ${detail("Participantes", item.participantes)}
             ${detail("Espaço", item.espaco)}
             ${detail("Configuração", item.configuracao)}
@@ -226,6 +275,8 @@
           loadCollection("preLocacoes"),
           loadCollection("feedbacks")
         ]);
+
+        await syncReservationLocks(preLocacoes);
 
         totals.locacoes.textContent = preLocacoes.length;
         totals.feedbacks.textContent = feedbacks.length;

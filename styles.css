@@ -185,6 +185,56 @@ select:focus {
   gap: 10px;
 }
 
+.time-slots {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(118px, 1fr));
+  gap: 10px;
+}
+
+.time-slots-empty {
+  grid-column: 1 / -1;
+  margin: 0;
+  border: 1px dashed #b9c8d5;
+  border-radius: 8px;
+  background: #f8fbfd;
+  color: var(--muted);
+  padding: 14px;
+  font-weight: 700;
+}
+
+.time-slot {
+  display: grid;
+  place-items: center;
+  min-height: 52px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #ffffff;
+  color: var(--acia-blue-dark);
+  font-size: 14px;
+  font-weight: 700;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease, background-color 180ms ease;
+}
+
+.time-slot:hover {
+  border-color: rgba(14, 86, 131, 0.38);
+  box-shadow: 0 10px 24px rgba(7, 58, 92, 0.08);
+  transform: translateY(-1px);
+}
+
+.time-slot:has(input:checked) {
+  border-color: var(--acia-blue);
+  background: #f4fbff;
+  box-shadow: 0 0 0 3px rgba(14, 86, 131, 0.12);
+}
+
+.time-slot input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
 .option,
 .room,
 .response-card,
